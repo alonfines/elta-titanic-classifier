@@ -64,25 +64,11 @@ pip install -r requirements.txt
 ### 2. Kaggle credentials (only needed to fetch the real dataset)
 
 1. Go to [kaggle.com/settings](https://www.kaggle.com/settings) → API Tokens → **Generate New
-   Token** and copy the token shown (it's only displayed once).
-2. Save it to `~/.kaggle/access_token`:
-
-   **macOS / Linux**
-
-   ```bash
-   mkdir -p ~/.kaggle
-   echo "<your_token>" > ~/.kaggle/access_token
-   chmod 600 ~/.kaggle/access_token
-   ```
-
-   **Windows**
-
-   ```powershell
-   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.kaggle" | Out-Null
-   Set-Content -Path "$env:USERPROFILE\.kaggle\access_token" -Value "<your_token>" -NoNewline
-   ```
-
-   (or set it as an environment variable instead — `KAGGLE_API_TOKEN=<your_token>`.)
+   Token**. The token is shown once, alongside the site's own note: *"Or save it to
+   `~/.kaggle/access_token`, where the client will read it automatically."*
+2. Do exactly that — create the `~/.kaggle` folder if it doesn't exist yet, and save the token into
+   a file at `~/.kaggle/access_token` (on Windows: `%USERPROFILE%\.kaggle\access_token`). Setting
+   it as the `KAGGLE_API_TOKEN` environment variable instead also works.
 
 
 ## Usage
