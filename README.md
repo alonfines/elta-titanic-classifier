@@ -28,7 +28,6 @@ Built for the Elta AI Data Science home assignment (`elta_ai_home_assignment_ds.
 ├── compare_baseline.py      # bonus: RandomForest comparison, needs train.py run first
 ├── data/
 │   ├── train.csv            # real dataset, gitignored — created by fetch_data.py
-│   └── sample_train.csv     # small sample, committed, for quick testing
 ├── models/                  # trained artifacts, gitignored — created by train.py
 ├── docs/images/             # screenshots used in this README
 └── requirements.txt
