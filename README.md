@@ -40,22 +40,25 @@ Built for the Elta AI Data Science home assignment (`elta_ai_home_assignment_ds.
 ```bash
 git clone https://github.com/alonfines/elta-titanic-classifier
 cd elta-titanic-classifier
+```
 
-python -m venv .venv
+**macOS / Linux**
+
+```bash
+python3 -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
 ```
 
-> **macOS note:** Homebrew's Python only ships as `python3`/`pip3` — there's no bare `python`/`pip`
-> on the system `PATH`, so `python -m venv .venv` and a bare `pip install` fail with
-> `command not found`. Use `python3 -m venv .venv` to create the venv, then
-> `source .venv/bin/activate` — activation is what makes `python`/`pip` resolve (to the venv's own
-> copies) for the rest of the session, so every command below can be used as written once
-> activated. If you instead see `error: externally-managed-environment` from `pip3 install`, it
-> means the venv step was skipped and pip is trying to install into the system Python (PEP 668
-> blocks that on Homebrew); create and activate the venv above rather than adding
-> `--break-system-packages`.
+**Windows**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+
+pip install -r requirements.txt
+```
 
 ### 2. Kaggle credentials (only needed to fetch the real dataset)
 
