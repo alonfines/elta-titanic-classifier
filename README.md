@@ -27,7 +27,8 @@ Built for the Elta AI Data Science home assignment (`elta_ai_home_assignment_ds.
 ├── ds_app.py                # Streamlit app: validation results + inference UI
 ├── compare_baseline.py      # bonus: RandomForest comparison, needs train.py run first
 ├── data/
-│   ├── train.csv            # real dataset, gitignored — created by fetch_data.py
+│   ├── sample_train.csv     # 30-row stratified sample, committed — preview only, not used by train.py
+│   └── train.csv            # real dataset, gitignored — created by fetch_data.py
 ├── models/                  # trained artifacts, gitignored — created by train.py
 ├── docs/images/             # screenshots used in this README
 └── requirements.txt
@@ -243,7 +244,15 @@ The MLP wins on all three metrics against a stock Random Forest.
 ## Data
 
 Only `train.csv` is used anywhere in this repo, per the assignment brief — `test.csv` and
-`gender_submission.csv` are never touched. The real `data/train.csv` is fetched by `fetch_data.py` and gitignored.
+`gender_submission.csv` are never touched. The real `data/train.csv` is fetched by `fetch_data.py`
+and gitignored.
+
+`data/sample_train.csv` is a small, committed 30-row sample (18 died / 12 survived, mirroring the
+real ~38% survival rate) with the identical raw schema, stratified from the fetched `train.csv`
+with `random_state=42` for reproducibility. It exists so the repo is browsable without Kaggle
+credentials — it's a preview only, not read by `train.py` or `fetch_data.py`; training and
+evaluation always use the full `data/train.csv` fetched via the [Kaggle credentials
+setup](#2-kaggle-credentials-only-needed-to-fetch-the-real-dataset) above.
 
 ## Reproducibility
 

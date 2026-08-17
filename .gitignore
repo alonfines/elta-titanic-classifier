@@ -12,8 +12,10 @@ venv/
 kaggle.json
 .kaggle/
 
-# Dataset — fetched from Kaggle via fetch_data.py, never committed
-data/
+# Dataset — the real train.csv is fetched from Kaggle via fetch_data.py, never committed.
+# data/sample_train.csv is a small committed sample (see README) and stays tracked.
+data/*
+!data/sample_train.csv
 
 # Trained weights + everything else train.py regenerates (preprocessor, config, logs, val split)
 models/*

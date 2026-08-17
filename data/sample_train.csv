@@ -1,0 +1,31 @@
+PassengerId,Survived,Pclass,Name,Sex,Age,SibSp,Parch,Ticket,Fare,Cabin,Embarked
+14,0,3,"Andersson, Mr. Anders Johan",male,39.0,1,5,347082,31.275,,S
+21,0,2,"Fynney, Mr. Joseph J",male,35.0,0,0,239865,26.0,,S
+57,1,2,"Rugg, Miss. Emily",female,21.0,0,0,C.A. 31026,10.5,,S
+108,1,3,"Moss, Mr. Albert Johan",male,,0,0,312991,7.775,,S
+118,0,2,"Turpin, Mr. William John Robert",male,29.0,1,0,11668,21.0,,S
+125,0,1,"White, Mr. Percival Wayland",male,54.0,0,1,35281,77.2875,D26,S
+131,0,3,"Drazenoic, Mr. Jozef",male,33.0,0,0,349241,7.8958,,C
+133,0,3,"Robins, Mrs. Alexander A (Grace Charity Laury)",female,47.0,1,0,A/5. 3337,14.5,,S
+168,0,3,"Skoog, Mrs. William (Anna Bernhardina Karlsson)",female,45.0,1,4,347088,27.9,,S
+202,0,3,"Sage, Mr. Frederick",male,,8,2,CA. 2343,69.55,,S
+286,0,3,"Stankovic, Mr. Ivan",male,33.0,0,0,349239,8.6625,,C
+308,1,1,"Penasco y Castellana, Mrs. Victor de Satode (Maria Josefa Perez de Soto y Vallejo)",female,17.0,1,0,PC 17758,108.9,C65,C
+312,1,1,"Ryerson, Miss. Emily Borie",female,18.0,2,2,PC 17608,262.375,B57 B59 B63 B66,C
+313,0,2,"Lahtinen, Mrs. William (Anna Sylfven)",female,26.0,1,1,250651,26.0,,S
+328,1,2,"Ball, Mrs. (Ada E Hall)",female,36.0,0,0,28551,13.0,D,S
+330,1,1,"Hippach, Miss. Jean Gertrude",female,16.0,0,1,111361,57.9792,B18,C
+361,0,3,"Skoog, Mr. Wilhelm",male,40.0,1,4,347088,27.9,,S
+454,1,1,"Goldenberg, Mr. Samuel L",male,49.0,1,0,17453,89.1042,C92,C
+459,1,2,"Toomey, Miss. Ellen",female,50.0,0,0,F.C.C. 13531,10.5,,S
+463,0,1,"Gee, Mr. Arthur H",male,47.0,0,0,111320,38.5,E63,S
+572,1,1,"Appleton, Mrs. Edward Dale (Charlotte Lamson)",female,53.0,2,0,11769,51.4792,C101,S
+602,0,3,"Slabenoff, Mr. Petco",male,,0,0,349214,7.8958,,S
+605,1,1,"Homer, Mr. Harry (""Mr E Haven"")",male,35.0,0,0,111426,26.55,,C
+607,0,3,"Karaic, Mr. Milan",male,30.0,0,0,349246,7.8958,,S
+630,0,3,"O'Connell, Mr. Patrick D",male,,0,0,334912,7.7333,,Q
+709,1,1,"Cleaver, Miss. Alice",female,22.0,0,0,113781,151.55,,S
+773,0,2,"Mack, Mrs. (Mary)",female,57.0,0,0,S.O./P.P. 3,10.5,E77,S
+784,0,3,"Johnston, Mr. Andrew G",male,,1,2,W./C. 6607,23.45,,S
+799,0,3,"Ibrahim Shawah, Mr. Yousseff",male,30.0,0,0,2685,7.2292,,C
+881,1,2,"Shelley, Mrs. William (Imanita Parrish Hall)",female,25.0,0,1,230433,26.0,,S
