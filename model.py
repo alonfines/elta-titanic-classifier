@@ -4,7 +4,7 @@ Kept deliberately small: one hidden layer, width 16. At 16 engineered features a
 training rows (80% of 891), a bigger network buys memorization risk rather than accuracy —
 Titanic survival is a shallow problem already largely explained by Sex/Pclass/Age/Title/family
 size, all of which are hand-engineered inputs to this model already (see `preprocessing.py` and
-`notebooks/eda.ipynb`). See the README design-choices section for the full reasoning.
+`eda.ipynb`). See the README design-choices section for the full reasoning.
 """
 from __future__ import annotations
 

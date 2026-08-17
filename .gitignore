@@ -13,6 +13,7 @@ kaggle.json
 .kaggle/
 
 # Full dataset (only a small sample ships in data/)
+data/train.csv
 data/*.csv
 !data/sample_train.csv
 
@@ -24,3 +25,7 @@ models/*
 .DS_Store
 .vscode/
 .idea/
+
+test.csv
+.claude
+CLAUDE.md

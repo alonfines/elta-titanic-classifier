@@ -5,7 +5,7 @@ object is pickled to disk (`models/preprocessor.pkl`) alongside the model weight
 as-is by `ds_app.py` for inference — so training and inference always apply identical logic, and
 nothing is ever re-fit on validation or new data.
 
-Feature engineering follows the findings in `notebooks/eda.ipynb` (§8 summary):
+Feature engineering follows the findings in `eda.ipynb` (§6 summary):
 - Drop `PassengerId`, `Name`, `Ticket`, `Cabin`, `SibSp`, `Parch` in raw form — `SibSp`/`Parch`
   are consumed only to derive `FamilySize` below, not kept as separate model inputs (the three
   are collinear by construction: `FamilySize = SibSp + Parch + 1`).

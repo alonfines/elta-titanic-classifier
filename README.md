@@ -20,7 +20,7 @@ Built for the Elta AI Data Science home assignment (`elta_ai_home_assignment_ds.
 ```
 .
 ├── fetch_data.py            # downloads train.csv from Kaggle
-├── notebooks/eda.ipynb      # exploratory data analysis
+├── eda.ipynb                # exploratory data analysis
 ├── preprocessing.py         # TitanicPreprocessor — shared by train.py and ds_app.py
 ├── model.py                 # TitanicNet — the PyTorch architecture
 ├── train.py                 # loads data, preprocesses, trains, saves artifacts to models/
@@ -79,7 +79,7 @@ re-download.
 ### Explore the data
 
 ```bash
-jupyter lab notebooks/eda.ipynb
+jupyter lab eda.ipynb
 ```
 
 Covers missingness (including *missingness as signal*, e.g. `Cabin` correlating with `Pclass`),
