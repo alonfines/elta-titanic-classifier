@@ -39,8 +39,8 @@ Built for the Elta AI Data Science home assignment (`elta_ai_home_assignment_ds.
 ### 1. Install dependencies
 
 ```bash
-git clone <your-repo-url>
-cd Elta_Home_Assignment2
+git clone https://github.com/alonfines/elta-titanic-classifier
+cd elta-titanic-classifier
 
 python -m venv .venv
 source .venv/bin/activate
@@ -119,8 +119,8 @@ Opens at `http://localhost:8501`. One page, top to bottom:
 - **Validation results** — metrics, confusion matrix, and ROC/precision-recall curves on the
   held-out split, evaluated at the F1-maximizing decision threshold rather than the usual 0.5
   (see [Decision threshold](#evaluation-strategy) below for the full reasoning), plus a
-  default-vs-tuned comparison table. The training-loss trajectory and full hyperparameters are
-  described in [Training process](#training-process) below rather than shown live in the app.
+  default-vs-tuned comparison table. The training-loss curve and full hyperparameters are in
+  [Training process](#training-process) below instead of live in the app.
 - **Run inference** — point at any CSV with the raw Titanic schema, get per-row predictions. If
   the CSV also has a `Survived` column, the same evaluation plots are shown against it.
 
@@ -128,11 +128,7 @@ Opens at `http://localhost:8501`. One page, top to bottom:
 
 **Validation results** — metrics and plots on the 179-row held-out split:
 
-![Validation results section](docs/images/validation_results.jpg)
-
-**Run inference** — predictions on `data/sample_train.csv`:
-
-![Run inference section](docs/images/run_inference.jpg)
+![Validation results section](docs/images/validation_results.png)
 
 ## Design choices
 
@@ -186,7 +182,9 @@ checkpoint that's actually saved and evaluated is whichever epoch had the *lowes
 loss, not the final epoch's weights, so a little post-optimal drift before stopping doesn't cost
 anything. In the current run this triggered at epoch 86 (best epoch: 71) — training loss kept
 inching down past that point while validation loss had already flattened out, which is exactly
-the gap early stopping exists to catch.
+the gap early stopping exists to catch:
+
+![Training curve](docs/images/training_curve.png)
 
 All of this is seeded (`seed=42`, threaded through `random`/`numpy`/`torch`) for a reproducible
 run. Every hyperparameter above is a `train.py` flag (`--epochs`, `--patience`, `--lr`,
