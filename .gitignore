@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Kaggle credentials (never commit)
+kaggle.json
+.kaggle/
+
+# Full dataset (only a small sample ships in data/)
+data/*.csv
+!data/sample_train.csv
+
+# Trained weights + everything else train.py regenerates (preprocessor, config, logs, val split)
+models/*
+!models/.gitkeep
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
