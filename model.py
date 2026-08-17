@@ -1,6 +1,6 @@
 """PyTorch model definition shared between `train.py` and `ds_app.py`.
 
-Kept deliberately small: one hidden layer, width 16. At ~15-18 engineered features and 713
+Kept deliberately small: one hidden layer, width 16. At 16 engineered features and 712
 training rows (80% of 891), a bigger network buys memorization risk rather than accuracy —
 Titanic survival is a shallow problem already largely explained by Sex/Pclass/Age/Title/family
 size, all of which are hand-engineered inputs to this model already (see `preprocessing.py` and

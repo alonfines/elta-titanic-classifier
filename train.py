@@ -11,11 +11,11 @@ Usage:
     python train.py --epochs 300 --patience 20 --lr 5e-4
 
 Outputs (all under --output-dir, default `models/`), regenerated fresh on every run:
-    titanic_model.pt     - best-validation-loss model state_dict
-    model_config.json     - hyperparams + feature names, needed to reconstruct the model
-    preprocessor.pkl       - fitted TitanicPreprocessor (identical logic used at inference)
-    val_split.csv           - raw held-out validation rows (incl. Survived), for evaluation
-    training_log.csv         - per-epoch train/val loss and metrics
+    titanic_model.pt  - best-validation-loss model state_dict
+    model_config.json - hyperparams + feature names, needed to reconstruct the model
+    preprocessor.pkl  - fitted TitanicPreprocessor (identical logic used at inference)
+    val_split.csv     - raw held-out validation rows (incl. Survived), for evaluation
+    training_log.csv  - per-epoch train/val loss and metrics
 """
 from __future__ import annotations
 

@@ -6,8 +6,9 @@ as-is by `ds_app.py` for inference — so training and inference always apply id
 nothing is ever re-fit on validation or new data.
 
 Feature engineering follows the findings in `notebooks/eda.ipynb` (§8 summary):
-- Drop `PassengerId`, `Name`, `Ticket`, `Cabin` in raw form — no signal beyond what's extracted
-  below, or none at all.
+- Drop `PassengerId`, `Name`, `Ticket`, `Cabin`, `SibSp`, `Parch` in raw form — `SibSp`/`Parch`
+  are consumed only to derive `FamilySize` below, not kept as separate model inputs (the three
+  are collinear by construction: `FamilySize = SibSp + Parch + 1`).
 - Engineer `Title` (from `Name`, rare titles bucketed), `FamilySize` (`SibSp + Parch + 1`),
   `HasCabin` (from `Cabin` non-null), `IsChild` (`Age < 16`).
 - Impute `Age` by `Pclass`/`Title` group median (falls back to the global median for an unseen
@@ -34,7 +35,7 @@ CHILD_AGE_CUTOFF = 16
 
 RAW_REQUIRED_COLS = ["Pclass", "Name", "Sex", "Age", "SibSp", "Parch", "Fare", "Cabin", "Embarked"]
 CATEGORICAL_COLS = ["Sex", "Embarked", "Title"]
-NUMERIC_COLS = ["Age", "FareLog", "SibSp", "Parch", "FamilySize"]
+NUMERIC_COLS = ["Age", "FareLog", "FamilySize"]
 PASSTHROUGH_COLS = ["HasCabin", "IsChild", "Pclass"]
 
 
