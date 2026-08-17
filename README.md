@@ -63,17 +63,26 @@ pip install -r requirements.txt
 
 ### 2. Kaggle credentials (only needed to fetch the real dataset)
 
-1. Go to [kaggle.com/settings](https://www.kaggle.com/settings) → API → **Create New Token**.
-   This downloads `kaggle.json`.
-2. Save it to `~/.kaggle/kaggle.json` and restrict its permissions:
+1. Go to [kaggle.com/settings](https://www.kaggle.com/settings) → API Tokens → **Generate New
+   Token** and copy the token shown (it's only displayed once).
+2. Save it to `~/.kaggle/access_token`:
+
+   **macOS / Linux**
+
    ```bash
    mkdir -p ~/.kaggle
-   mv ~/Downloads/kaggle.json ~/.kaggle/kaggle.json
-   chmod 600 ~/.kaggle/kaggle.json
+   echo "<your_token>" > ~/.kaggle/access_token
+   chmod 600 ~/.kaggle/access_token
    ```
-3. Accept the competition rules at
-   [kaggle.com/competitions/titanic/rules](https://www.kaggle.com/competitions/titanic/rules) —
-   the API returns a 403 without this step, even with a valid token.
+
+   **Windows**
+
+   ```powershell
+   New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.kaggle" | Out-Null
+   Set-Content -Path "$env:USERPROFILE\.kaggle\access_token" -Value "<your_token>" -NoNewline
+   ```
+
+   (or set it as an environment variable instead — `KAGGLE_API_TOKEN=<your_token>`.)
 
 
 ## Usage
