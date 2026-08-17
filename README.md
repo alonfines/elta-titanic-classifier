@@ -47,6 +47,16 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+> **macOS note:** Homebrew's Python only ships as `python3`/`pip3` — there's no bare `python`/`pip`
+> on the system `PATH`, so `python -m venv .venv` and a bare `pip install` fail with
+> `command not found`. Use `python3 -m venv .venv` to create the venv, then
+> `source .venv/bin/activate` — activation is what makes `python`/`pip` resolve (to the venv's own
+> copies) for the rest of the session, so every command below can be used as written once
+> activated. If you instead see `error: externally-managed-environment` from `pip3 install`, it
+> means the venv step was skipped and pip is trying to install into the system Python (PEP 668
+> blocks that on Homebrew); create and activate the venv above rather than adding
+> `--break-system-packages`.
+
 ### 2. Kaggle credentials (only needed to fetch the real dataset)
 
 1. Go to [kaggle.com/settings](https://www.kaggle.com/settings) → API → **Create New Token**.
