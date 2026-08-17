@@ -15,7 +15,12 @@ Feature engineering follows the findings in `eda.ipynb` (§6 summary):
   group combination); `Embarked` by mode; `Fare` by median (only relevant for inference CSVs —
   `train.csv` itself has no missing `Fare`).
 - Encode `Sex`, `Embarked`, `Title` via one-hot; keep `Pclass` as its natural ordinal integer.
-- Log-transform `Fare` (right-skewed with extreme outliers) and standardize all numeric columns.
+- Log-transform `Fare` (right-skewed with extreme outliers).
+- Normalize: `Age`, `FareLog`, `FamilySize` (`NUMERIC_COLS`) are standardized via `StandardScaler`
+  (mean 0, unit variance), fit on the training split only. `Pclass`, `HasCabin`, `IsChild`
+  (`PASSTHROUGH_COLS`) are *not* scaled — they're already small, bounded values (1-3 or 0/1), so
+  standardizing them would add noise without fixing anything. The one-hot columns aren't scaled
+  either, for the same reason (already 0/1).
 
 Expected input schema (raw Kaggle Titanic columns): `Pclass`, `Name`, `Sex`, `Age`, `SibSp`,
 `Parch`, `Fare`, `Cabin`, `Embarked`. `Survived` (the target) and `PassengerId`/`Ticket` are
@@ -34,9 +39,9 @@ RARE_TITLE_MIN_COUNT = 10
 CHILD_AGE_CUTOFF = 16
 
 RAW_REQUIRED_COLS = ["Pclass", "Name", "Sex", "Age", "SibSp", "Parch", "Fare", "Cabin", "Embarked"]
-CATEGORICAL_COLS = ["Sex", "Embarked", "Title"]
-NUMERIC_COLS = ["Age", "FareLog", "FamilySize"]
-PASSTHROUGH_COLS = ["HasCabin", "IsChild", "Pclass"]
+CATEGORICAL_COLS = ["Sex", "Embarked", "Title"]  # one-hot encoded, not scaled (already 0/1)
+NUMERIC_COLS = ["Age", "FareLog", "FamilySize"]  # standardized (StandardScaler, fit on train only)
+PASSTHROUGH_COLS = ["HasCabin", "IsChild", "Pclass"]  # kept raw, not scaled (already small/bounded)
 
 
 class TitanicPreprocessor:
@@ -67,6 +72,8 @@ class TitanicPreprocessor:
         missing = set(RAW_REQUIRED_COLS) - set(df.columns)
         if missing:
             raise ValueError(f"Input is missing required columns: {sorted(missing)}")
+        if len(df) == 0:
+            raise ValueError("Input has no rows to process.")
 
         df = df.copy()
 
@@ -103,6 +110,10 @@ class TitanicPreprocessor:
         if fitting:
             self.fare_median_ = df["Fare"].median()
         df["Fare"] = df["Fare"].fillna(self.fare_median_)
+        if (df["Fare"] < 0).any():
+            # log1p(negative) is NaN, which would otherwise flow silently through scaling and
+            # the model into a bogus-looking-but-wrong prediction instead of a clear error.
+            raise ValueError("Fare cannot be negative.")
         df["FareLog"] = np.log1p(df["Fare"])
 
         return df
@@ -128,7 +139,7 @@ class TitanicPreprocessor:
         self.feature_names_ = cat_names + NUMERIC_COLS + PASSTHROUGH_COLS
         self._fitted = True
 
-        return np.hstack([cat_arr, num_arr, pass_arr]).astype(np.float32)
+        return self._check_no_nan(np.hstack([cat_arr, num_arr, pass_arr]).astype(np.float32))
 
     def transform(self, df: pd.DataFrame) -> np.ndarray:
         if not self._fitted:
@@ -137,7 +148,16 @@ class TitanicPreprocessor:
         cat_arr = self.encoder_.transform(eng[CATEGORICAL_COLS])
         num_arr = self.scaler_.transform(eng[NUMERIC_COLS])
         pass_arr = eng[PASSTHROUGH_COLS].to_numpy(dtype=np.float32)
-        return np.hstack([cat_arr, num_arr, pass_arr]).astype(np.float32)
+        return self._check_no_nan(np.hstack([cat_arr, num_arr, pass_arr]).astype(np.float32))
+
+    @staticmethod
+    def _check_no_nan(arr: np.ndarray) -> np.ndarray:
+        # Safety net: every known NaN source (negative Fare, etc.) is already guarded upstream in
+        # _engineer, but this catches anything unanticipated too, so a bad input fails loudly
+        # here instead of silently producing a NaN-based prediction downstream.
+        if np.isnan(arr).any():
+            raise ValueError("Preprocessing produced NaN features — check the input for invalid values.")
+        return arr
 
     @property
     def n_features(self) -> int:

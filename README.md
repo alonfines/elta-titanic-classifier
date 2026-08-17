@@ -25,6 +25,7 @@ Built for the Elta AI Data Science home assignment (`elta_ai_home_assignment_ds.
 ├── model.py                 # TitanicNet — the PyTorch architecture
 ├── train.py                 # loads data, preprocesses, trains, saves artifacts to models/
 ├── ds_app.py                # Streamlit app: validation results + inference UI
+├── compare_baseline.py      # bonus: RandomForest comparison, needs train.py run first
 ├── data/
 │   ├── train.csv            # real dataset, gitignored — created by fetch_data.py
 │   └── sample_train.csv     # small sample, committed, for quick testing
@@ -62,7 +63,7 @@ pip install -r requirements.txt
    the API returns a 403 without this step, even with a valid token.
 
 You can skip this step entirely if you just want to try the Streamlit app — `data/sample_train.csv`
-is already committed and works with the inference tab.
+is already committed and works with the inference section.
 
 ## Usage
 
@@ -113,10 +114,13 @@ Useful flags: `--epochs`, `--patience`, `--lr`, `--weight-decay`, `--val-size`, 
 streamlit run ds_app.py
 ```
 
-Opens at `http://localhost:8501`. Two tabs:
+Opens at `http://localhost:8501`. One page, top to bottom:
 
-- **Validation results** — metrics, confusion matrix, ROC and precision-recall curves on the
-  held-out split, an interactive decision-threshold slider, and the training loss curve.
+- **Validation results** — metrics, confusion matrix, and ROC/precision-recall curves on the
+  held-out split, evaluated at the F1-maximizing decision threshold rather than the usual 0.5
+  (see [Decision threshold](#evaluation-strategy) below for the full reasoning), plus a
+  default-vs-tuned comparison table. The training-loss trajectory and full hyperparameters are
+  described in [Training process](#training-process) below rather than shown live in the app.
 - **Run inference** — point at any CSV with the raw Titanic schema, get per-row predictions. If
   the CSV also has a `Survived` column, the same evaluation plots are shown against it.
 
@@ -124,11 +128,11 @@ Opens at `http://localhost:8501`. Two tabs:
 
 **Validation results** — metrics and plots on the 179-row held-out split:
 
-![Validation results tab](docs/images/validation_results.jpg)
+![Validation results section](docs/images/validation_results.jpg)
 
 **Run inference** — predictions on `data/sample_train.csv`:
 
-![Run inference tab](docs/images/run_inference.jpg)
+![Run inference section](docs/images/run_inference.jpg)
 
 ## Design choices
 
@@ -150,6 +154,11 @@ for validation and inference (`.transform`) — no logic duplicated between `tra
 - **Transformed:** `Fare` log-transformed (right-skewed, long tail); all numeric columns
   standardized on the training split's statistics.
 
+The 16 resulting model inputs (also in `model_config.json`'s `feature_names`, regenerated fresh
+by every `train.py` run): `Sex_female`, `Sex_male`, `Embarked_C`, `Embarked_Q`, `Embarked_S`,
+`Title_Master`, `Title_Miss`, `Title_Mr`, `Title_Mrs`, `Title_Rare`, `Age`, `FareLog`,
+`FamilySize`, `HasCabin`, `IsChild`, `Pclass`.
+
 ### Model
 
 A single hidden layer, width 16, with dropout:
@@ -161,8 +170,29 @@ Linear(n_features → 16) → ReLU → Dropout(0.3) → Linear(16 → 1)
 At 16 engineered features and 712 training rows, this is a deliberately small network. Titanic
 survival is a well-studied, largely "shallow" problem — dominated by Sex, Pclass, Age/Title, and
 family size, all of which are already hand-engineered inputs — so a deeper or wider network adds
-memorization risk rather than accuracy. Trained with `BCEWithLogitsLoss`, Adam
-(`lr=1e-3`, `weight_decay=1e-4`), and early stopping on validation loss (patience 15).
+memorization risk rather than accuracy.
+
+### Training process
+
+Loss and optimizer: `BCEWithLogitsLoss` (binary cross-entropy on raw logits — paired with the
+model's un-activated output, more numerically stable than a manual sigmoid + `BCELoss`), Adam
+(`lr=1e-3`, `weight_decay=1e-4`), batch size 32.
+
+The train/validation split (`val_size=0.2`, i.e. the same 80/20 ratio discussed under
+[Evaluation strategy](#evaluation-strategy) below) is created once before any training starts, so
+the validation set is never touched by gradient updates. Training runs for up to 300 epochs, but
+stops early once validation loss hasn't improved for 15 straight epochs (`patience=15`) — the
+checkpoint that's actually saved and evaluated is whichever epoch had the *lowest* validation
+loss, not the final epoch's weights, so a little post-optimal drift before stopping doesn't cost
+anything. In the current run this triggered at epoch 86 (best epoch: 71) — training loss kept
+inching down past that point while validation loss had already flattened out, which is exactly
+the gap early stopping exists to catch.
+
+All of this is seeded (`seed=42`, threaded through `random`/`numpy`/`torch`) for a reproducible
+run. Every hyperparameter above is a `train.py` flag (`--epochs`, `--patience`, `--lr`,
+`--weight-decay`, `--batch-size`, `--val-size`, `--seed`) rather than a hardcoded constant — see
+[Train the model](#train-the-model) above for the full list. The per-epoch train/validation loss
+and metrics for every run are written to `models/training_log.csv` for closer inspection.
 
 ### Evaluation strategy
 

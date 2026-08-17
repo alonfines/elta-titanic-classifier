@@ -192,6 +192,7 @@ def train(args: argparse.Namespace) -> None:
     # Threshold tuning: pick the cutoff that maximizes F1 on the validation probabilities,
     # rather than defaulting to 0.5. Explicitly disclosed as val-set-tuned — both metric sets
     # are saved and reported, not just the tuned (better-looking) one.
+    model.eval()  # explicit, not just inherited from the evaluate() call above — don't rely on call order
     with torch.no_grad():
         val_probs = torch.sigmoid(model(X_val_t)).numpy()
     threshold, _ = find_best_threshold(y_val.astype(int), val_probs)

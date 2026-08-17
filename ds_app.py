@@ -1,8 +1,8 @@
 """Streamlit app: validation results + inference UI for the Titanic PyTorch classifier.
 
-Two tabs:
+Single page, top to bottom:
 - Validation results: metrics/plots on the held-out split `train.py` wrote to
-  `models/val_split.csv`, with an interactive decision-threshold slider.
+  `models/val_split.csv`, evaluated at the F1-tuned decision threshold.
 - Run inference: point at any CSV with the raw Titanic schema, get per-row predictions; if the
   CSV also has a `Survived` column, the same evaluation plots/metrics are shown against it.
 
@@ -182,18 +182,6 @@ def plot_precision_recall(y_true: np.ndarray, probs: np.ndarray, threshold: floa
     return fig
 
 
-def plot_training_curve(history: pd.DataFrame) -> plt.Figure:
-    fig, ax = plt.subplots(figsize=(8, 3.4))
-    ax.plot(history["epoch"], history["train_loss"], color=COLOR_DIED, linewidth=2, label="Train loss")
-    ax.plot(history["epoch"], history["val_loss"], color=COLOR_SURVIVED, linewidth=2, label="Validation loss")
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("BCE loss")
-    ax.set_title("Training curve")
-    ax.legend(loc="upper right", frameon=False)
-    fig.tight_layout()
-    return fig
-
-
 def render_evaluation(y_true: np.ndarray, probs: np.ndarray, preds: np.ndarray, threshold: float) -> None:
     render_metrics_row(y_true, probs, preds)
     c1, c2, c3 = st.columns(3)
@@ -210,6 +198,12 @@ def render_evaluation(y_true: np.ndarray, probs: np.ndarray, preds: np.ndarray, 
 # ---------------------------------------------------------------------------
 
 st.set_page_config(page_title="Titanic Survival Classifier — Alon Fainshtein", page_icon="🚢", layout="wide")
+# Streamlit's default st.caption() size (used throughout for body/description text, as opposed
+# to titles/headers) reads a bit small — bump it up without touching title/header sizes.
+st.markdown(
+    '<style>[data-testid="stCaptionContainer"] { font-size: 1.05rem; }</style>',
+    unsafe_allow_html=True,
+)
 st.title("🚢 Titanic Survival Classifier")
 st.caption(
     "By Alon Fainshtein · PyTorch MLP trained on the Kaggle Titanic dataset — "
@@ -227,154 +221,136 @@ if artifacts is None:
 config = artifacts["config"]
 tuned_threshold = float(config["decision_threshold"])
 
-tab_eval, tab_infer = st.tabs(["Validation results", "Run inference"])
+val_path = MODELS_DIR / "val_split.csv"
+if not val_path.exists():
+    st.error("`models/val_split.csv` not found — re-run `python train.py`.")
+else:
+    val_df = load_val_split(str(val_path))
+    probs, preds = predict(val_df, artifacts)  # preds already thresholded at tuned_threshold below
+    y_true = val_df["Survived"].to_numpy(dtype=int)
 
-with tab_eval:
-    val_path = MODELS_DIR / "val_split.csv"
-    if not val_path.exists():
-        st.error("`models/val_split.csv` not found — re-run `python train.py`.")
-    else:
-        val_df = load_val_split(str(val_path))
-        probs, _ = predict(val_df, artifacts)
-        y_true = val_df["Survived"].to_numpy(dtype=int)
-
-        st.subheader("Held-out validation performance")
-        st.caption(
-            f"{len(val_df)} rows, split off before any preprocessing was fit and never used in "
-            "training. Survival rate here: "
-            f"{y_true.mean():.1%} (train split: not shown here, see `model_config.json`)."
-        )
-
-        threshold = st.slider(
-            "Decision threshold",
-            min_value=0.0,
-            max_value=1.0,
-            value=tuned_threshold,
-            step=0.01,
-            help=(
-                "Probability cutoff above which a passenger is predicted 'Survived'. The model "
-                "is trained to minimize log-loss, which says nothing about where this cutoff "
-                f"should sit — {tuned_threshold:.3f} was chosen by sweeping thresholds on this "
-                "validation set to maximize F1 (see README). Drag to see the precision/recall "
-                "trade-off at other cutoffs."
-            ),
-        )
-        preds = (probs >= threshold).astype(int)
-        render_evaluation(y_true, probs, preds, threshold)
-
-        with st.expander("Default cutoff (0.5) vs. tuned cutoff — side by side"):
-            st.caption(
-                "Both are reported explicitly because the tuned cutoff was chosen on this same "
-                "validation set — the comparison shows exactly what that tuning bought."
-            )
-            comparison = pd.DataFrame(
-                {
-                    "default (0.5)": config["val_metrics_default_threshold"],
-                    f"tuned ({tuned_threshold:.3f})": config["val_metrics_tuned_threshold"],
-                }
-            ).round(3)
-            st.table(comparison)
-
-        log_path = MODELS_DIR / "training_log.csv"
-        if log_path.exists():
-            st.subheader("Training curve")
-            st.pyplot(plot_training_curve(pd.read_csv(log_path)))
-
-        with st.expander("Model & training configuration"):
-            st.json(config)
-
-with tab_infer:
-    st.subheader("Run inference on a CSV")
+    st.subheader("Held-out validation performance")
     st.caption(
-        "Path to a CSV with the raw Titanic schema: `Pclass`, `Name`, `Sex`, `Age`, `SibSp`, "
-        "`Parch`, `Fare`, `Cabin`, `Embarked`. `Survived` is optional — if present, evaluation "
-        "plots and metrics are shown against it too, exactly as in the Validation results tab."
+        f"{len(val_df)} rows, split off before any preprocessing was fit and never used in "
+        f"training. Survival rate here: {y_true.mean():.1%}."
     )
-    # No default path: an empty box forces a deliberate choice, so this tab never silently
-    # re-evaluates the same rows already shown in the Validation results tab.
-    csv_path_str = st.text_input(
-        "CSV path", value="", placeholder="e.g. data/sample_train.csv, or any CSV with the raw Titanic schema"
-    )
-    run = st.button("Run inference", type="primary")
 
-    if run:
-        if not csv_path_str.strip():
-            st.warning("Enter a CSV path above first.")
+    st.caption(
+        "The model outputs a survival *probability* per passenger, not a yes/no verdict — "
+        f"the metrics and plots below use a cutoff of {tuned_threshold:.3f} (not the usual "
+        "0.5), the value that maximized F1 on this validation set. See the comparison table "
+        "below for what that tuning bought over the default 0.5 cutoff."
+    )
+    render_evaluation(y_true, probs, preds, tuned_threshold)
+
+    with st.expander("Default cutoff (0.5) vs. tuned cutoff — side by side", expanded=True):
+        st.caption(
+            "Both are reported explicitly because the tuned cutoff was chosen on this same "
+            "validation set — the comparison shows exactly what that tuning bought."
+        )
+        comparison = pd.DataFrame(
+            {
+                "default (0.5)": config["val_metrics_default_threshold"],
+                f"tuned ({tuned_threshold:.3f})": config["val_metrics_tuned_threshold"],
+            }
+        ).round(3)
+        st.table(comparison)
+
+st.divider()
+
+st.subheader("Run inference on a CSV")
+st.caption(
+    "Path to a CSV with the raw Titanic schema: `Pclass`, `Name`, `Sex`, `Age`, `SibSp`, "
+    "`Parch`, `Fare`, `Cabin`, `Embarked`. `Survived` is optional — if present, evaluation "
+    "plots and metrics are shown against it too, exactly as above."
+)
+csv_path_str = st.text_input(
+    "CSV path",
+    value=str(val_path),
+    placeholder="e.g. data/sample_train.csv, or any CSV with the raw Titanic schema",
+)
+run = st.button("Run inference", type="primary")
+
+if run:
+    if not csv_path_str.strip():
+        st.warning("Enter a CSV path above first.")
+    else:
+        csv_path = Path(csv_path_str)
+        if not csv_path.exists():
+            st.error(f"File not found: {csv_path}")
         else:
-            csv_path = Path(csv_path_str)
-            if not csv_path.exists():
-                st.error(f"File not found: {csv_path}")
-            else:
-                try:
-                    infer_df = pd.read_csv(csv_path)
-                except Exception as exc:
-                    st.error(f"Could not read `{csv_path}` as a CSV: {exc}")
-                    infer_df = None
+            try:
+                infer_df = pd.read_csv(csv_path)
+            except Exception as exc:
+                st.error(f"Could not read `{csv_path}` as a CSV: {exc}")
+                infer_df = None
 
-                if infer_df is not None:
-                    try:
-                        probs, preds = predict(infer_df, artifacts)
-                    except ValueError as exc:
-                        # Missing required columns — preprocessing.py's own check.
-                        st.error(str(exc))
-                    except Exception as exc:
-                        # Right columns, wrong contents (e.g. Age as text) — surface a plain
-                        # message instead of a raw Streamlit traceback.
-                        st.error(
-                            "Could not run inference on this CSV. Check that columns have the "
-                            "expected types (e.g. `Age` and `Fare` numeric, not text).\n\n"
-                            f"Details: {exc}"
+            if infer_df is not None:
+                try:
+                    probs, preds = predict(infer_df, artifacts)
+                except ValueError as exc:
+                    # preprocessing.py's own input checks — missing columns, no rows,
+                    # negative Fare, or any other invalid value that would otherwise
+                    # silently turn into a NaN feature and a bogus-looking prediction.
+                    st.error(str(exc))
+                except Exception as exc:
+                    # Right columns, wrong contents (e.g. Age as text) — surface a plain
+                    # message instead of a raw Streamlit traceback.
+                    st.error(
+                        "Could not run inference on this CSV. Check that columns have the "
+                        "expected types (e.g. `Age` and `Fare` numeric, not text).\n\n"
+                        f"Details: {exc}"
+                    )
+                else:
+                    st.success(f"Ran inference on {len(infer_df)} rows.")
+
+                    results = infer_df.copy()
+                    results["predicted_survived"] = preds
+                    results["survival_probability"] = probs.round(3)
+                    lead_cols = [c for c in ["PassengerId", "Name"] if c in results.columns]
+                    lead_cols += ["predicted_survived", "survival_probability"]
+                    other_cols = [c for c in results.columns if c not in lead_cols]
+                    st.dataframe(results[lead_cols + other_cols], use_container_width=True, hide_index=True)
+
+                    st.metric("Predicted survival rate", f"{preds.mean():.1%}")
+
+                    # Evaluate on whatever subset actually has a label, rather than requiring
+                    # every row to be labeled before showing anything. Match the column
+                    # case/whitespace-insensitively so a near-miss header doesn't silently
+                    # drop evaluation with no explanation.
+                    survived_col = next(
+                        (c for c in infer_df.columns if c.strip().lower() == "survived"), None
+                    )
+                    if survived_col is None:
+                        st.caption(
+                            "No `Survived` column in this CSV — showing predictions only. "
+                            "There's no ground truth to evaluate against."
                         )
                     else:
-                        st.success(f"Ran inference on {len(infer_df)} rows.")
-
-                        results = infer_df.copy()
-                        results["predicted_survived"] = preds
-                        results["survival_probability"] = probs.round(3)
-                        lead_cols = [c for c in ["PassengerId", "Name"] if c in results.columns]
-                        lead_cols += ["predicted_survived", "survival_probability"]
-                        other_cols = [c for c in results.columns if c not in lead_cols]
-                        st.dataframe(results[lead_cols + other_cols], use_container_width=True, hide_index=True)
-
-                        st.metric("Predicted survival rate", f"{preds.mean():.1%}")
-
-                        # Evaluate on whatever subset actually has a label, rather than requiring
-                        # every row to be labeled before showing anything. Match the column
-                        # case/whitespace-insensitively so a near-miss header doesn't silently
-                        # drop evaluation with no explanation.
-                        survived_col = next(
-                            (c for c in infer_df.columns if c.strip().lower() == "survived"), None
-                        )
-                        if survived_col is None:
+                        labeled_mask = infer_df[survived_col].notna().to_numpy()
+                        n_labeled = int(labeled_mask.sum())
+                        if n_labeled == 0:
                             st.caption(
-                                "No `Survived` column in this CSV — showing predictions only. "
-                                "There's no ground truth to evaluate against."
+                                f"`{survived_col}` column is present but every value is blank — "
+                                "showing predictions only, nothing to evaluate against."
                             )
                         else:
-                            labeled_mask = infer_df[survived_col].notna().to_numpy()
-                            n_labeled = int(labeled_mask.sum())
-                            if n_labeled == 0:
+                            y_true = infer_df.loc[labeled_mask, survived_col].to_numpy(dtype=int)
+                            st.subheader("Evaluation against provided ground truth")
+                            if n_labeled < len(infer_df):
                                 st.caption(
-                                    f"`{survived_col}` column is present but every value is blank — "
-                                    "showing predictions only, nothing to evaluate against."
+                                    f"{n_labeled} of {len(infer_df)} rows have a `{survived_col}` "
+                                    "label — evaluating on those only."
+                                )
+                            if len(set(y_true)) < 2:
+                                # Precision/recall/ROC-AUC and the ROC/PR curves are all
+                                # undefined with only one class present — say so plainly
+                                # instead of rendering a silent NaN or an sklearn warning.
+                                acc = (preds[labeled_mask] == y_true).mean()
+                                st.caption(
+                                    f"All {n_labeled} labeled rows share the same "
+                                    f"`{survived_col}` value, so precision/recall/ROC-AUC "
+                                    f"aren't defined. Accuracy: {acc:.3f}."
                                 )
                             else:
-                                y_true = infer_df.loc[labeled_mask, survived_col].to_numpy(dtype=int)
-                                st.subheader("Evaluation against provided ground truth")
-                                if n_labeled < len(infer_df):
-                                    st.caption(
-                                        f"{n_labeled} of {len(infer_df)} rows have a `{survived_col}` "
-                                        "label — evaluating on those only."
-                                    )
-                                if len(set(y_true)) < 2:
-                                    # Precision/recall/ROC-AUC and the ROC/PR curves are all
-                                    # undefined with only one class present — say so plainly
-                                    # instead of rendering a silent NaN or an sklearn warning.
-                                    acc = (preds[labeled_mask] == y_true).mean()
-                                    st.caption(
-                                        f"All {n_labeled} labeled rows share the same "
-                                        f"`{survived_col}` value, so precision/recall/ROC-AUC "
-                                        f"aren't defined. Accuracy: {acc:.3f}."
-                                    )
-                                else:
-                                    render_evaluation(y_true, probs[labeled_mask], preds[labeled_mask], tuned_threshold)
+                                render_evaluation(y_true, probs[labeled_mask], preds[labeled_mask], tuned_threshold)
