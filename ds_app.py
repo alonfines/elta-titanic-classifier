@@ -267,7 +267,7 @@ st.caption(
 csv_path_str = st.text_input(
     "CSV path",
     value=str(val_path),
-    placeholder="e.g. data/sample_train.csv, or any CSV with the raw Titanic schema",
+    placeholder="e.g. models/val_split.csv, or any CSV with the raw Titanic schema",
 )
 run = st.button("Run inference", type="primary")
 

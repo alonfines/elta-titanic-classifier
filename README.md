@@ -62,8 +62,6 @@ pip install -r requirements.txt
    [kaggle.com/competitions/titanic/rules](https://www.kaggle.com/competitions/titanic/rules) —
    the API returns a 403 without this step, even with a valid token.
 
-You can skip this step entirely if you just want to try the Streamlit app — `data/sample_train.csv`
-is already committed and works with the inference section.
 
 ## Usage
 
@@ -194,9 +192,7 @@ and metrics for every run are written to `models/training_log.csv` for closer in
 
 ### Evaluation strategy
 
-An 80/20 stratified split (not 90/10): at 90/10 the validation set would be ~89 rows, small enough
-that a single flipped prediction swings F1 by more than a point. 80/20 gives ~178 validation rows
-— more stable — without meaningfully hurting the training set.
+An 80/20 stratified split: 80/20 gives ~178 validation rows
 
 Accuracy alone is a misleading headline metric here (~38% survived, so a model that always
 predicts "died" already scores ~62%). Precision, recall, F1, ROC-AUC, and a confusion matrix are
@@ -206,23 +202,7 @@ reported instead, all computed on the held-out split only.
 the 0.5 classification cutoff should sit for an imbalanced target. `train.py` sweeps thresholds on
 the validation probabilities and picks the one that maximizes F1 (0.444 in the current run, F1
 0.782 → 0.812). This is disclosed, not hidden: both the default-0.5 and tuned-threshold metrics
-are saved to `model_config.json` and shown side by side in the app. Worth being explicit about the
-caveat — the tuned number is optimized on the same 179-row set it's reported on, so it's an
-honest description of what that cutoff buys *on this validation set*, not an independently
-validated generalization estimate.
-
-### What was considered and deliberately not built
-
-- **K-fold cross-validation / seed ensembling** — would reduce validation noise, but at this
-  dataset size and model size the expected gain is small (a few tenths of an F1 point), and it
-  would require a real change to the inference contract (multiple checkpoints, averaged
-  predictions) for a benefit smaller than the noise floor of a 179-row validation set.
-- **Categorical embeddings** — `Sex`, `Embarked`, `Title` top out at ~8 levels each; one-hot is
-  simpler and arguably more interpretable at this scale. Embeddings solve a high-cardinality
-  problem this dataset doesn't have.
-- **SWA / MC-dropout / LR scheduling** — solve loss-landscape instability and uncertainty
-  quantification problems that a 16-unit network trained for a few dozen epochs with early
-  stopping doesn't really have.
+are saved to `model_config.json` and shown side by side in the app.
 
 ### Bonus: baseline comparison against a Random Forest
 
@@ -246,18 +226,12 @@ neither one gets an advantage the other didn't also get.
 | PyTorch MLP (this project) | 0.838 | 0.782 | 0.865 |
 | RandomForestClassifier (baseline) | 0.804 | 0.741 | 0.833 |
 
-The MLP wins on all three metrics against a stock Random Forest. That's not a foregone
-conclusion — an untuned RF often matches or beats a small MLP on a dataset this size — so this is
-a genuine result, not a formality: the small hidden layer is picking up something a simple
-majority-vote-of-trees baseline doesn't, without the extra capacity of the network reading as
-overkill (see [Model](#model) above for why that architecture was chosen in the first place).
+The MLP wins on all three metrics against a stock Random Forest.
 
 ## Data
 
 Only `train.csv` is used anywhere in this repo, per the assignment brief — `test.csv` and
-`gender_submission.csv` are never touched. `data/sample_train.csv` (40 rows, stratified to
-preserve the ~38% survival rate) is committed so the repo is usable without Kaggle credentials;
-the real `data/train.csv` is fetched by `fetch_data.py` and gitignored.
+`gender_submission.csv` are never touched. The real `data/train.csv` is fetched by `fetch_data.py` and gitignored.
 
 ## Reproducibility
 

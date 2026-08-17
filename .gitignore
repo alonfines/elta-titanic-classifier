@@ -12,10 +12,8 @@ venv/
 kaggle.json
 .kaggle/
 
-# Full dataset (only a small sample ships in data/)
-data/train.csv
-data/*.csv
-!data/sample_train.csv
+# Dataset — fetched from Kaggle via fetch_data.py, never committed
+data/
 
 # Trained weights + everything else train.py regenerates (preprocessor, config, logs, val split)
 models/*
